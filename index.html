@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Club attendance</title><link rel="stylesheet" href="style.css?v=3"></head><body><main>
+<title>Club attendance</title><link rel="stylesheet" href="style.css?v=4"></head><body><main>
 <h1>Club attendance</h1><p class="mut" id="sub">Sign in with your school Google account.</p>
 <div id="out"><button id="in">Sign in with Google</button><p id="err" class="msg bad" role="alert"></p></div>
 <div id="app" hidden>
@@ -9,13 +9,14 @@
   <div class="row"><button id="so" class="ghost">Sign out</button></div>
 </div>
 <script type="module">
-import {auth,fs,db,$,signIn,signOut,onAuthStateChanged,todayET,pretty,emailOf,has} from "./common.js";
+import {auth,fs,db,$,signIn,redirectResult,signOut,onAuthStateChanged,todayET,pretty,emailOf,has} from "./common.js";
 import {LOCATION,DOMAIN} from "./firebase-config.js";
 const say=(t,c="")=>{$("msg").textContent=t;$("msg").className="msg "+c};
 const fmt=(ts)=>ts.toDate().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York",timeZoneName:"short"});
 const dist=(a,b,c,d)=>{const r=x=>x*Math.PI/180,h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 12742000*Math.asin(Math.sqrt(h))};
 $("in").onclick=()=>{$("err").textContent="";signIn().catch(e=>{$("err").textContent="Sign-in failed ("+(e.code||"error")+"): "+e.message})};
 $("so").onclick=()=>signOut(auth);
+redirectResult().catch(e=>{$("err").textContent="Sign-in failed ("+(e.code||"error")+"): "+e.message});
 onAuthStateChanged(auth,async u=>{
   $("out").hidden=!!u;$("app").hidden=!u;if(!u)return;
   const em=emailOf(u),today=todayET();$("who").textContent=u.displayName+" ("+em+")";
