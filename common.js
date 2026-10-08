@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import * as fs from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, DOMAIN, OPEN_HOUR, OPEN_MIN } from "./firebase-config.js";
 
@@ -7,7 +7,13 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app), db = fs.getFirestore(app);
 export { fs, signOut, onAuthStateChanged };
 export const $ = (id) => document.getElementById(id);
-export const signIn = () => { const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" }); return signInWithPopup(auth, p); };
+export const signIn = async () => {
+  const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" });
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return signInWithRedirect(auth, p); // popups are unreliable on phones
+  try { return await signInWithPopup(auth, p); }
+  catch (e) { if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) return signInWithRedirect(auth, p); throw e; }
+};
+export const redirectResult = () => getRedirectResult(auth);
 export const todayET = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 export const isWed = (d) => new Date(d + "T12:00:00Z").getUTCDay() === 3;
 export const pretty = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
