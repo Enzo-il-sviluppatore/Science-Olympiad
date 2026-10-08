@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin – Club attendance</title><link rel="stylesheet" href="style.css?v=3"></head><body>
+<title>Admin – Club attendance</title><link rel="stylesheet" href="style.css?v=4"></head><body>
 <main id="out"><h1>Admin</h1><button id="in">Sign in with Google</button>
 <p id="err" class="msg bad" role="alert"></p><button id="so2" class="ghost" hidden>Sign out</button></main>
 <div class="shell" id="app" hidden>
@@ -18,12 +18,13 @@
 <p class="mut" id="sc"></p><ul class="list" id="st"></ul></section>
 <div class="msg bad" id="msg"></div></div></div>
 <script type="module">
-import {auth,fs,db,$,signIn,signOut,onAuthStateChanged,todayET,isWed,pretty,meetingDoc,emailOf,has} from "./common.js";
+import {auth,fs,db,$,signIn,redirectResult,signOut,onAuthStateChanged,todayET,isWed,pretty,meetingDoc,emailOf,has} from "./common.js";
 const say=t=>$("msg").textContent=t||"";
 const col=n=>fs.collection(db,n);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 $("in").onclick=()=>{$("err").textContent="";signIn().catch(e=>{$("err").textContent="Sign-in failed ("+(e.code||"error")+"): "+e.message})};
 $("so").onclick=$("so2").onclick=()=>signOut(auth);
+redirectResult().catch(e=>{$("err").textContent="Sign-in failed ("+(e.code||"error")+"): "+e.message});
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("on",n===b));
   document.querySelectorAll(".content section").forEach(s=>s.hidden=s.id!==b.dataset.v);say("")});
