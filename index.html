@@ -20,8 +20,7 @@ onAuthStateChanged(auth,async u=>{
   $("out").hidden=!!u;$("app").hidden=!u;if(!u)return;
   const em=emailOf(u),today=todayET();$("who").textContent=u.displayName+" ("+em+")";
   $("here").hidden=true;say("");
-  if(!em.endsWith("@"+DOMAIN)){say("Use your @"+DOMAIN+" account.","bad");return}
-  try{
+    try{
     if(await has("admins",em)){location.replace("admin.html");return}
     const st=await fs.getDoc(fs.doc(db,"students",em));
     if(!st.exists()){$("mtg").textContent="";$("info").textContent="";say("This account isn't on the approved list. Ask your club teacher to add you.","bad");return}
