@@ -7,7 +7,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app), db = fs.getFirestore(app);
 export { fs, signOut, onAuthStateChanged };
 export const $ = (id) => document.getElementById(id);
-export const signIn = () => { const p = new GoogleAuthProvider(); p.setCustomParameters({ hd: DOMAIN, prompt: "select_account" }); return signInWithPopup(auth, p); };
+export const signIn = () => { const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" }); return signInWithPopup(auth, p); };
 export const todayET = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 export const isWed = (d) => new Date(d + "T12:00:00Z").getUTCDay() === 3;
 export const pretty = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
