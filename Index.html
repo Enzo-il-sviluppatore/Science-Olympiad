@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Club attendance</title><link rel="stylesheet" href="style.css"></head><body><main>
+<h1>Club attendance</h1><p class="mut" id="sub">Sign in with your school Google account.</p>
+<div id="out"><button id="in">Sign in with Google</button></div>
+<div id="app" hidden>
+  <p id="who" class="mut"></p><h2 id="mtg"></h2><p id="info" class="mut"></p>
+  <button id="here" class="big" hidden>I'm here</button>
+  <div class="msg" id="msg" role="status"></div>
+  <div class="row"><a id="adm" class="btn ghost" href="admin.html" hidden>Admin page</a><button id="so" class="ghost">Sign out</button></div>
+</div>
+<script type="module">
+import {auth,fs,db,$,signIn,signOut,onAuthStateChanged,todayET,pretty,emailOf,has} from "./common.js";
+import {LOCATION,DOMAIN} from "./firebase-config.js";
+const say=(t,c="")=>{$("msg").textContent=t;$("msg").className="msg "+c};
+const fmt=(ts)=>ts.toDate().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York",timeZoneName:"short"});
+const dist=(a,b,c,d)=>{const r=x=>x*Math.PI/180,h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2;return 12742000*Math.asin(Math.sqrt(h))};
+$("in").onclick=()=>signIn().catch(e=>say(e.message,"bad"));
+$("so").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async u=>{
+  $("out").hidden=!!u;$("app").hidden=!u;if(!u)return;
+  const em=emailOf(u),today=todayET();$("who").textContent=u.displayName+" ("+em+")";
+  $("here").hidden=true;say("");
+  if(!em.endsWith("@"+DOMAIN)){say("Use your @"+DOMAIN+" account.","bad");return}
+  try{
+    const admin=await has("admins",em);$("adm").hidden=!admin;
+    const st=await fs.getDoc(fs.doc(db,"students",em));
+    if(!st.exists()){$("mtg").textContent="";$("info").textContent="";if(!admin)say("This account isn't on the approved list. Ask your club teacher to add you.","bad");return}
+    const m=await fs.getDoc(fs.doc(db,"meetings",today)),id=today+"_"+em;
+    if(!m.exists()||!m.data().open){$("mtg").textContent="No meeting today";$("info").textContent="Check-in opens on meeting days.";return}
+    $("mtg").textContent="Meeting today";$("info").textContent="Check-in opens at "+fmt(m.data().opensAt)+" and you must be on campus.";
+    if(await has("attendance",id)){say("You're checked in. See you next time!","ok");return}
+    $("here").hidden=false;
+    $("here").onclick=()=>{
+      if(new Date()<m.data().opensAt.toDate())return say("Check-in opens at "+fmt(m.data().opensAt)+".","bad");
+      say("Checking your location…");$("here").disabled=true;
+      navigator.geolocation.getCurrentPosition(async p=>{
+        const d=dist(p.coords.latitude,p.coords.longitude,LOCATION.lat,LOCATION.lng);
+        if(d>LOCATION.radiusMeters){$("here").disabled=false;return say("You're about "+Math.round(d)+" m from the meeting spot. Move closer and try again.","bad")}
+        try{await fs.setDoc(fs.doc(db,"attendance",id),{date:today,email:em,name:st.data().name,at:fs.serverTimestamp(),distance:Math.round(d)});
+          $("here").hidden=true;say("You're checked in. See you next time!","ok")}
+        catch(e){$("here").disabled=false;say("Check-in was blocked. Check-in is only open after the start time on meeting days.","bad")}
+      },()=>{$("here").disabled=false;say("Location is blocked. Allow location access for this site and try again.","bad")},{enableHighAccuracy:true,timeout:15000});
+    };
+  }catch(e){say("Something went wrong: "+e.message,"bad")}
+});
+</script></main></body></html>
