@@ -1,5 +1,4 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Club attendance</title><link rel="stylesheet" href="style.css"></head><body><main>
 <h1>Club attendance</h1><p class="mut" id="sub">Sign in with your school Google account.</p>
 <div id="out"><button id="in">Sign in with Google</button></div>
@@ -7,7 +6,7 @@
   <p id="who" class="mut"></p><h2 id="mtg"></h2><p id="info" class="mut"></p>
   <button id="here" class="big" hidden>I'm here</button>
   <div class="msg" id="msg" role="status"></div>
-  <div class="row"><a id="adm" class="btn ghost" href="admin.html" hidden>Admin page</a><button id="so" class="ghost">Sign out</button></div>
+  <div class="row"><button id="so" class="ghost">Sign out</button></div>
 </div>
 <script type="module">
 import {auth,fs,db,$,signIn,signOut,onAuthStateChanged,todayET,pretty,emailOf,has} from "./common.js";
@@ -23,9 +22,9 @@ onAuthStateChanged(auth,async u=>{
   $("here").hidden=true;say("");
   if(!em.endsWith("@"+DOMAIN)){say("Use your @"+DOMAIN+" account.","bad");return}
   try{
-    const admin=await has("admins",em);$("adm").hidden=!admin;
+    if(await has("admins",em)){location.replace("admin.html");return}
     const st=await fs.getDoc(fs.doc(db,"students",em));
-    if(!st.exists()){$("mtg").textContent="";$("info").textContent="";if(!admin)say("This account isn't on the approved list. Ask your club teacher to add you.","bad");return}
+    if(!st.exists()){$("mtg").textContent="";$("info").textContent="";say("This account isn't on the approved list. Ask your club teacher to add you.","bad");return}
     const m=await fs.getDoc(fs.doc(db,"meetings",today)),id=today+"_"+em;
     if(!m.exists()||!m.data().open){$("mtg").textContent="No meeting today";$("info").textContent="Check-in opens on meeting days.";return}
     $("mtg").textContent="Meeting today";$("info").textContent="Check-in opens at "+fmt(m.data().opensAt)+" and you must be on campus.";
