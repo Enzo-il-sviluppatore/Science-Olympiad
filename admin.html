@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin – Club attendance</title><link rel="stylesheet" href="style.css"></head><body><main>
 <h1>Admin</h1><p class="mut"><button class="ghost" id="so">Sign out</button></p>
-<div id="out"><button id="in">Sign in with Google</button></div>
+<div id="out"><button id="in">Sign in with Google</button><p id="err" class="msg bad" role="alert"></p></div>
 <div id="app" hidden>
 <section><h2>Attendance</h2>
 <div class="row"><label>Date <input type="date" id="d"></label><label>Name <input id="q" placeholder="Search name"></label></div>
@@ -18,7 +18,7 @@ import {auth,fs,db,$,signIn,signOut,onAuthStateChanged,todayET,isWed,pretty,meet
 import {DOMAIN} from "./firebase-config.js";
 const say=t=>$("msg").textContent=t||"";
 const col=n=>fs.collection(db,n);
-$("in").onclick=()=>signIn().catch(e=>say(e.message));$("so").onclick=()=>signOut(auth);
+$("in").onclick=()=>{$("err").textContent="";signIn().catch(e=>{$("err").textContent="Sign-in failed ("+(e.code||"error")+"): "+e.message})};$("so").onclick=()=>signOut(auth);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 async function att(){
   const s=await fs.getDocs(fs.query(col("attendance"),fs.where("date","==",$("d").value)));
