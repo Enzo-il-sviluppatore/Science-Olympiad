@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin – Club attendance</title><link rel="stylesheet" href="style.css"></head><body><main>
+<h1>Admin</h1><p class="mut"><a href="index.html">Back to check-in</a> · <button class="ghost" id="so">Sign out</button></p>
+<div id="out"><button id="in">Sign in with Google</button></div>
+<div id="app" hidden>
+<section><h2>Attendance</h2>
+<div class="row"><label>Date <input type="date" id="d"></label><label>Name <input id="q" placeholder="Search name"></label></div>
+<table><thead><tr><th>Name</th><th>Email</th><th>Time</th></tr></thead><tbody id="att"></tbody></table><p class="mut" id="cnt"></p></section>
+<section><h2>Meeting days</h2><p class="mut">Wednesdays are added automatically for the next 12 weeks. Cancel a day, or add a different one.</p>
+<div class="row"><input type="date" id="nd"><button id="addm">Add meeting day</button></div>
+<table><tbody id="mt"></tbody></table></section>
+<section><h2>Approved students</h2>
+<div class="row"><input id="sn" placeholder="Full name"><input id="se" type="email" placeholder="name@pinescharter.net"><button id="adds">Add student</button></div>
+<table><tbody id="st"></tbody></table></section>
+<div class="msg bad" id="msg"></div></div>
+<script type="module">
+import {auth,fs,db,$,signIn,signOut,onAuthStateChanged,todayET,isWed,pretty,meetingDoc,emailOf,has} from "./common.js";
+import {DOMAIN} from "./firebase-config.js";
+const say=t=>$("msg").textContent=t||"";
+const col=n=>fs.collection(db,n);
+$("in").onclick=()=>signIn().catch(e=>say(e.message));$("so").onclick=()=>signOut(auth);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function att(){
+  const s=await fs.getDocs(fs.query(col("attendance"),fs.where("date","==",$("d").value)));
+  const q=$("q").value.toLowerCase().trim();
+  const rows=s.docs.map(x=>x.data()).filter(r=>!q||r.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  $("att").innerHTML=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${r.at?r.at.toDate().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"}):""}</td></tr>`).join("")||`<tr><td colspan="3" class="mut">No check-ins found.</td></tr>`;
+  $("cnt").textContent=rows.length+" checked in";
+}
+async function meetings(){
+  const s=await fs.getDocs(col("meetings"));const t=todayET();
+  const list=s.docs.filter(x=>x.id>=t).sort((a,b)=>a.id.localeCompare(b.id));
+  $("mt").innerHTML=list.map(x=>`<tr><td>${pretty(x.id)}</td><td>${x.data().open?"Meeting":"Canceled"}</td><td><button class="ghost" data-id="${x.id}" data-open="${x.data().open}">${x.data().open?"Cancel":"Restore"}</button></td></tr>`).join("");
+}
+async function seed(){
+  const s=await fs.getDocs(col("meetings")),have=new Set(s.docs.map(x=>x.id));
+  for(let i=0;i<84;i++){const d=new Date(todayET()+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+i);const k=d.toISOString().slice(0,10);
+    if(isWed(k)&&!have.has(k))await fs.setDoc(fs.doc(db,"meetings",k),meetingDoc(k));}
+}
+async function students(){
+  const s=await fs.getDocs(col("students"));
+  $("st").innerHTML=s.docs.sort((a,b)=>a.data().name.localeCompare(b.data().name)).map(x=>`<tr><td>${esc(x.data().name)}</td><td>${esc(x.id)}</td><td><button class="ghost" data-rm="${x.id}">Remove</button></td></tr>`).join("")||`<tr><td class="mut">No students yet. Add one above.</td></tr>`;
+}
+$("mt").onclick=async e=>{const b=e.target.closest("button");if(!b)return;
+  await fs.setDoc(fs.doc(db,"meetings",b.dataset.id),meetingDoc(b.dataset.id,b.dataset.open!=="true"));meetings();};
+$("addm").onclick=async()=>{const d=$("nd").value;if(!d||d<todayET())return say("Pick today or a future date.");say("");
+  await fs.setDoc(fs.doc(db,"meetings",d),meetingDoc(d));meetings();};
+$("adds").onclick=async()=>{const n=$("sn").value.trim(),e=$("se").value.trim().toLowerCase();
+  if(!n||!e.endsWith("@"+DOMAIN))return say("Enter a name and an @"+DOMAIN+" email.");say("");
+  await fs.setDoc(fs.doc(db,"students",e),{name:n});$("sn").value=$("se").value="";students();};
+$("st").onclick=async e=>{const b=e.target.closest("button");if(!b)return;await fs.deleteDoc(fs.doc(db,"students",b.dataset.rm));students();};
+$("d").onchange=$("q").oninput=att;
+onAuthStateChanged(auth,async u=>{
+  $("out").hidden=!!u;$("app").hidden=true;if(!u)return;
+  if(!(await has("admins",emailOf(u)))){$("out").hidden=false;$("out").innerHTML='<p class="bad">This account isn\'t an admin.</p>';return}
+  $("app").hidden=false;$("d").value=todayET();
+  try{await seed();await Promise.all([att(),meetings(),students()])}catch(e){say(e.message)}
+});
+</script></main></body></html>
