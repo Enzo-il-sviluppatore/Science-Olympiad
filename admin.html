@@ -10,7 +10,7 @@
 <div class="row"><input type="date" id="nd"><button id="addm">Add meeting day</button></div>
 <table><tbody id="mt"></tbody></table></section>
 <section><h2>Approved students</h2>
-<div class="row"><input id="sn" placeholder="Full name"><input id="se" type="email" placeholder="name@pinescharter.net"><button id="adds">Add student</button></div>
+<div class="row"><input id="sn" placeholder="Full name"><input id="se" type="email" placeholder="student@email.com"><button id="adds">Add student</button></div>
 <table><tbody id="st"></tbody></table></section>
 <div class="msg bad" id="msg"></div></div>
 <script type="module">
@@ -46,7 +46,7 @@ $("mt").onclick=async e=>{const b=e.target.closest("button");if(!b)return;
 $("addm").onclick=async()=>{const d=$("nd").value;if(!d||d<todayET())return say("Pick today or a future date.");say("");
   await fs.setDoc(fs.doc(db,"meetings",d),meetingDoc(d));meetings();};
 $("adds").onclick=async()=>{const n=$("sn").value.trim(),e=$("se").value.trim().toLowerCase();
-  if(!n||!e.endsWith("@"+DOMAIN))return say("Enter a name and an @"+DOMAIN+" email.");say("");
+  if(!n||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return say("Enter a name and a valid email.");say("");
   await fs.setDoc(fs.doc(db,"students",e),{name:n});$("sn").value=$("se").value="";students();};
 $("st").onclick=async e=>{const b=e.target.closest("button");if(!b)return;await fs.deleteDoc(fs.doc(db,"students",b.dataset.rm));students();};
 $("d").onchange=$("q").oninput=att;
