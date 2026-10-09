@@ -1,15 +1,10 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": [
-      "firebase.json",
-      "firestore.rules",
-      "README.md",
-      ".github/**",
-      "**/.*"
+    "ignore": ["firebase.json", "firestore.rules", "README.md", ".github/**", "**/.*"],
+    "headers": [
+      { "source": "**/*.@(html|js|css)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
     ]
   },
-  "firestore": {
-    "rules": "firestore.rules"
-  }
+  "firestore": { "rules": "firestore.rules" }
 }
