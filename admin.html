@@ -9,11 +9,11 @@
 <div class="content">
 <section id="v-att"><h1>Attendance</h1>
 <div class="row"><label>Date <input type="date" id="d"></label><label>Name <input id="q" placeholder="Search name"></label></div>
-<table><thead><tr><th>Name</th><th>Email</th><th>Time</th></tr></thead><tbody id="att"></tbody></table><p class="mut" id="cnt"></p></section>
+<table><thead><tr><th>Name</th><th>Email</th><th>Date</th><th>Time</th></tr></thead><tbody id="att"></tbody></table><p class="mut" id="cnt"></p></section>
 <section id="v-mtg" hidden><h1>Meeting days</h1><p class="mut">Wednesdays are added automatically for the next 12 weeks. Cancel a day, or add a different one.</p>
 <div class="row"><input type="date" id="nd"><button id="addm">Add meeting day</button></div><table><tbody id="mt"></tbody></table></section>
 <section id="v-stu" hidden><h1>Students <button class="plus" id="plus" aria-label="Add student" title="Add student">+</button></h1>
-<form class="card" id="sf" hidden><div class="row"><input id="sn" placeholder="Full name" autocomplete="off"><input id="se" type="email" placeholder="student@pinescharter.net" autocomplete="off"></div>
+<form class="card" id="sf" hidden><div class="row"><input id="sn" placeholder="Full name" autocomplete="off"><input id="se" type="email" placeholder="student@email.com" autocomplete="off"></div>
 <div class="row"><button type="submit">Add student</button><button type="button" class="ghost" id="cx">Cancel</button></div></form>
 <p class="mut" id="sc"></p><ul class="list" id="st"></ul></section>
 <div class="msg bad" id="msg"></div></div></div>
@@ -32,7 +32,7 @@ async function att(){
   const s=await fs.getDocs(fs.query(col("attendance"),fs.where("date","==",$("d").value)));
   const q=$("q").value.toLowerCase().trim();
   const rows=s.docs.map(x=>x.data()).filter(r=>!q||r.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
-  $("att").innerHTML=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${r.at?r.at.toDate().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"}):""}</td></tr>`).join("")||`<tr><td colspan="3" class="mut">No check-ins found.</td></tr>`;
+  $("att").innerHTML=rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${new Date(r.date+"T12:00:00Z").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"})}</td><td>${r.at?r.at.toDate().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"}):""}</td></tr>`).join("")||`<tr><td colspan="4" class="mut">No check-ins found.</td></tr>`;
   $("cnt").textContent=rows.length+" checked in";
 }
 async function meetings(){
