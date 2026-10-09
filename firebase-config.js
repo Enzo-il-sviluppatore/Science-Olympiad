@@ -7,6 +7,6 @@ export const firebaseConfig = {
   
 };
 
-export const LOCATION = { lat: 26.038808181317098, lng: -80.40471043366648, radiusMeters: 150 };
+export const LOCATION = { lat: 26.0319, lng: -80.3750, radiusMeters: 150 };
 export const DOMAIN = "pinescharter.net";
 export const OPEN_HOUR = 15, OPEN_MIN = 0;  
