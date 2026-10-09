@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin – Club attendance</title><link rel="stylesheet" href="style.css?v=4"></head><body>
+<title>Admin – Club attendance</title><link rel="stylesheet" href="style.css?v=5"></head><body>
 <main id="out"><h1>Admin</h1><button id="in">Sign in with Google</button>
 <p id="err" class="msg bad" role="alert"></p><button id="so2" class="ghost" hidden>Sign out</button></main>
 <div class="shell" id="app" hidden>
@@ -37,10 +37,11 @@ async function att(){
 }
 async function meetings(){
   const s=await fs.getDocs(col("meetings"));const t=todayET();
-  $("mt").innerHTML=s.docs.filter(x=>x.id>=t).sort((a,b)=>a.id.localeCompare(b.id)).map(x=>`<tr><td>${pretty(x.id)}</td><td>${x.data().open?"Meeting":"Canceled"}</td><td><button class="ghost" data-id="${x.id}" data-open="${x.data().open}">${x.data().open?"Cancel":"Restore"}</button></td></tr>`).join("");
+  $("mt").innerHTML=s.docs.filter(x=>/^\d{4}-\d\d-\d\d$/.test(x.id)&&x.id>=t).sort((a,b)=>a.id.localeCompare(b.id)).map(x=>`<tr><td>${pretty(x.id)}</td><td>${x.data().open?"Meeting":"Canceled"}</td><td><button class="ghost" data-id="${x.id}" data-open="${x.data().open}">${x.data().open?"Cancel":"Restore"}</button> <button class="ghost" data-del="${x.id}" aria-label="Delete this day" title="Delete this day">✕</button></td></tr>`).join("");
 }
 async function seed(){
   const s=await fs.getDocs(col("meetings")),have=new Set(s.docs.map(x=>x.id));
+  const rm=s.docs.find(x=>x.id==="_removed");(rm?rm.data().dates||[]:[]).forEach(d=>have.add(d));
   for(let i=0;i<84;i++){const d=new Date(todayET()+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+i);const k=d.toISOString().slice(0,10);
     if(isWed(k)&&!have.has(k))await fs.setDoc(fs.doc(db,"meetings",k),meetingDoc(k));}
 }
@@ -50,6 +51,8 @@ async function students(){
   $("st").innerHTML=s.docs.sort((a,b)=>a.data().name.localeCompare(b.data().name)).map(x=>`<li><div class="grow">${esc(x.data().name)}<small>${esc(x.id)}</small></div><button class="ghost" data-rm="${x.id}" data-n="${esc(x.data().name)}">Remove</button></li>`).join("")||`<li class="mut">No students yet. Tap + to add one.</li>`;
 }
 $("mt").onclick=async e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.del){if(!confirm("Delete "+pretty(b.dataset.del)+" from the list?"))return;
+    await fs.deleteDoc(fs.doc(db,"meetings",b.dataset.del));await fs.setDoc(fs.doc(db,"meetings","_removed"),{dates:fs.arrayUnion(b.dataset.del)},{merge:true});return meetings()}
   await fs.setDoc(fs.doc(db,"meetings",b.dataset.id),meetingDoc(b.dataset.id,b.dataset.open!=="true"));meetings();};
 $("addm").onclick=async()=>{const d=$("nd").value;if(!d||d<todayET())return say("Pick today or a future date.");say("");
   await fs.setDoc(fs.doc(db,"meetings",d),meetingDoc(d));meetings();};
